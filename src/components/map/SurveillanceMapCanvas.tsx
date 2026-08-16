@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { Fragment, useEffect, useMemo } from "react";
 import { Circle, MapContainer, Popup, TileLayer, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { ACTIVITY_COLORS } from "@/components/ActivityBadge";
@@ -51,7 +51,7 @@ export default function SurveillanceMapCanvas({
         const core = 350 + intensity * 450;
         const halo = core * 2.1;
         return (
-          <div key={cell.cell_id}>
+          <Fragment key={cell.cell_id}>
             <Circle
               center={[cell.latitude, cell.longitude]}
               radius={halo}
@@ -100,7 +100,7 @@ export default function SurveillanceMapCanvas({
                 </div>
               </Popup>
             </Circle>
-          </div>
+          </Fragment>
         );
       })}
     </MapContainer>
