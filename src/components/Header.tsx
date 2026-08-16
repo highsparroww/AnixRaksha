@@ -15,7 +15,7 @@ export function Header({
   unreadCount,
   onRefresh,
 }: {
-  name?: string;
+  name?: string | undefined;
   notifications: Notification[];
   unreadCount: number;
   onRefresh: () => void;

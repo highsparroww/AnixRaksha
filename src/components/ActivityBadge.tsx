@@ -22,8 +22,8 @@ export function ActivityBadge({
   level,
   className,
 }: {
-  level?: string | null;
-  className?: string;
+  level?: string | null | undefined;
+  className?: string | undefined;
 }) {
   const key = (level ?? "NORMAL").toUpperCase() as ActivityLevel;
   const color = ACTIVITY_COLORS[key] ?? "#64748b";

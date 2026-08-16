@@ -8,7 +8,7 @@ import { Panel } from "@/components/Panel";
 const inputClass =
   "h-9 w-full rounded-md border border-border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring";
 
-export function SymptomChecker({ onSubmitted }: { onSubmitted?: () => void }) {
+export function SymptomChecker({ onSubmitted }: { onSubmitted?: (() => void) | undefined }) {
   const [selected, setSelected] = useState<string[]>([]);
   const [severity, setSeverity] = useState("MODERATE");
   const [duration, setDuration] = useState(24);

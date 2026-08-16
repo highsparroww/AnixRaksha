@@ -24,7 +24,7 @@ export default function SurveillanceMapCanvas({
 }: {
   cells: MapCell[];
   center: { latitude: number; longitude: number };
-  zoom?: number;
+  zoom?: number | undefined;
 }) {
   const maxCount = useMemo(
     () => Math.max(1, ...cells.map((c) => c.case_count || 0)),

@@ -35,7 +35,7 @@ export function SurveillanceMap({
   days: number;
   onDaysChange: (value: number) => void;
   onCenter: () => void;
-  loading?: boolean;
+  loading?: boolean | undefined;
 }) {
   const totalCases = cells.reduce((sum, c) => sum + (c.case_count || 0), 0);
 

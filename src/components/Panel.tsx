@@ -8,11 +8,11 @@ export function Panel({
   children,
   className,
 }: {
-  title?: string;
-  icon?: ReactNode;
-  action?: ReactNode;
+  title?: string | undefined;
+  icon?: ReactNode | undefined;
+  action?: ReactNode | undefined;
   children: ReactNode;
-  className?: string;
+  className?: string | undefined;
 }) {
   return (
     <section className={cn("rounded-lg border border-border bg-card", className)}>
@@ -40,8 +40,8 @@ export function Row({
   sub,
 }: {
   left: ReactNode;
-  right?: ReactNode;
-  sub?: ReactNode;
+  right?: ReactNode | undefined;
+  sub?: ReactNode | undefined;
 }) {
   return (
     <div className="flex items-start justify-between gap-3 border-b border-border py-2 last:border-0 last:pb-0 first:pt-0">
