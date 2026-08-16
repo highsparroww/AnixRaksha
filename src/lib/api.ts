@@ -80,7 +80,7 @@ export async function api<T>(path: string, opts: Options = {}): Promise<T> {
     res = await fetch(url.toString(), {
       method,
       headers,
-      body: body === undefined ? undefined : JSON.stringify(body),
+      body: body === undefined ? null : JSON.stringify(body),
     });
   } catch {
     if (!silent) toast.error("Cannot reach the WaterWatch API.");
