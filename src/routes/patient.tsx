@@ -137,6 +137,7 @@ function PatientPage() {
           void loadMap();
         } else if (event.type === "OUTBREAK_ALERT") {
           toast.warning("New outbreak alert in your area");
+          void loadMap();
           void loadDashboard();
         } else if (event.type === "APPOINTMENT_BOOKED" || event.type === "NOTIFICATION") {
           void loadDashboard();
