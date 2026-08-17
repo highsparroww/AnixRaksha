@@ -6,7 +6,21 @@ import { api } from "@/lib/api";
 import { useRequireRole } from "@/lib/auth";
 import { useRealtime } from "@/lib/realtime";
 import { DEFAULT_CENTER, label } from "@/lib/types";
-import type { EnvironmentalRisk, MapCell, PatientDashboard } from "@/lib/types";
+import type {
+  Clinic,
+  EnvironmentalRisk,
+  MapCell,
+  NearbySurveillance,
+  Outbreak,
+  PatientDashboard,
+} from "@/lib/types";
+import {
+  getEnvironmentalRisk,
+  getNearbyClinics,
+  getNearbySurveillance,
+  getOutbreaks,
+  getSurveillanceMap,
+} from "@/lib/surveillance";
 import { Header } from "@/components/Header";
 import { Panel, EmptyText, Row } from "@/components/Panel";
 import { ActivityBadge } from "@/components/ActivityBadge";
@@ -44,9 +58,14 @@ function PatientPage() {
   const [dashboard, setDashboard] = useState<PatientDashboard | null>(null);
   const [risk, setRisk] = useState<EnvironmentalRisk | null>(null);
   const [cells, setCells] = useState<MapCell[]>([]);
+  const [outbreaks, setOutbreaks] = useState<Outbreak[]>([]);
+  const [clinics, setClinics] = useState<Clinic[]>([]);
+  const [nearby, setNearby] = useState<NearbySurveillance | null>(null);
   const [disease, setDisease] = useState("");
   const [days, setDays] = useState(7);
+  const [radiusKm, setRadiusKm] = useState(10);
   const [mapLoading, setMapLoading] = useState(false);
+  const [mapError, setMapError] = useState(false);
 
   const profile = dashboard?.profile;
   const center = {
@@ -66,25 +85,33 @@ function PatientPage() {
 
   const loadMap = useCallback(async () => {
     setMapLoading(true);
+    const geo = {
+      latitude: center.latitude,
+      longitude: center.longitude,
+      radiusKm,
+      disease: disease || undefined,
+      timeWindowDays: days,
+    };
     try {
-      const data = await api<{ cells: MapCell[] }>("/api/v1/surveillance/map", {
-        query: {
-          latitude: center.latitude,
-          longitude: center.longitude,
-          radius_km: 10,
-          disease: disease || undefined,
-          time_window_days: days,
-        },
-        silent: true,
-      });
+      const data = await getSurveillanceMap(geo);
       setCells(data.cells ?? []);
+      setMapError(false);
     } catch {
-      /* keep previous cells */
+      setMapError(true);
     } finally {
       setMapLoading(false);
     }
+    void getOutbreaks(geo)
+      .then(setOutbreaks)
+      .catch(() => setOutbreaks([]));
+    void getNearbySurveillance(geo)
+      .then(setNearby)
+      .catch(() => setNearby(null));
+    void getNearbyClinics(geo)
+      .then(setClinics)
+      .catch(() => setClinics([]));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [center.latitude, center.longitude, disease, days]);
+  }, [center.latitude, center.longitude, disease, days, radiusKm]);
 
   useEffect(() => {
     if (allowed) void loadDashboard();
@@ -92,7 +119,7 @@ function PatientPage() {
 
   useEffect(() => {
     if (!allowed) return;
-    api<EnvironmentalRisk>("/api/v1/environmental-risk/me", { silent: true })
+    getEnvironmentalRisk()
       .then(setRisk)
       .catch(() => setRisk(null));
   }, [allowed]);
@@ -100,7 +127,7 @@ function PatientPage() {
   useEffect(() => {
     if (allowed && dashboard) void loadMap();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [allowed, disease, days, dashboard?.profile?.latitude]);
+  }, [allowed, disease, days, radiusKm, dashboard?.profile?.latitude]);
 
   useRealtime(
     useCallback(
@@ -109,6 +136,7 @@ function PatientPage() {
           void loadMap();
         } else if (event.type === "OUTBREAK_ALERT") {
           toast.warning("New outbreak alert in your area");
+          void loadMap();
           void loadDashboard();
         } else if (event.type === "APPOINTMENT_BOOKED" || event.type === "NOTIFICATION") {
           void loadDashboard();
@@ -124,6 +152,8 @@ function PatientPage() {
   const activity = dashboard?.disease_activity;
   const cases = activity?.total_cases ?? activity?.case_count ?? 0;
   const growth = activity?.growth_rate ?? activity?.growth_percent;
+  const nearbyCases = nearby?.total_cases ?? nearby?.case_count ?? cases;
+  const nearbyGrowth = nearby?.growth_rate ?? nearby?.growth_percent ?? growth;
   const alerts = dashboard?.outbreak_alerts ?? [];
   const appointment = dashboard?.upcoming_appointments?.[0];
   const prediction = dashboard?.recent_predictions?.[0];
@@ -157,29 +187,6 @@ function PatientPage() {
           </div>
         ) : null}
 
-        <section className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          <div className="rounded-lg border border-border bg-card p-3">
-            <div className="text-xs text-muted-foreground">Local disease risk</div>
-            <div className="mt-1.5">
-              <ActivityBadge level={activity?.activity_level ?? "NORMAL"} />
-            </div>
-          </div>
-          <div className="rounded-lg border border-border bg-card p-3">
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Activity className="h-3.5 w-3.5" /> Cases nearby
-            </div>
-            <div className="mt-1 text-xl font-semibold">{cases}</div>
-          </div>
-          <div className="rounded-lg border border-border bg-card p-3">
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <TrendingUp className="h-3.5 w-3.5" /> Growth
-            </div>
-            <div className="mt-1 text-xl font-semibold">
-              {growth === undefined || growth === null ? "—" : `${Math.round(growth)}%`}
-            </div>
-          </div>
-        </section>
-
         <SurveillanceMap
           cells={cells}
           center={center}
@@ -187,9 +194,51 @@ function PatientPage() {
           onDiseaseChange={setDisease}
           days={days}
           onDaysChange={setDays}
+          radiusKm={radiusKm}
+          onRadiusChange={setRadiusKm}
+          outbreaks={outbreaks}
+          clinics={clinics}
+          error={mapError}
+          onRetry={loadMap}
           onCenter={loadMap}
           loading={mapLoading}
         />
+
+        <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <div className="rounded-lg border border-border bg-card p-3">
+            <div className="text-xs text-muted-foreground">Local disease risk</div>
+            <div className="mt-1.5">
+              <ActivityBadge
+                level={nearby?.activity_level ?? activity?.activity_level ?? "NORMAL"}
+              />
+            </div>
+          </div>
+          <div className="rounded-lg border border-border bg-card p-3">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Activity className="h-3.5 w-3.5" /> Cases nearby
+            </div>
+            <div className="mt-1 text-xl font-semibold">{nearbyCases}</div>
+            <div className="text-[11px] text-muted-foreground">within {radiusKm} km</div>
+          </div>
+          <div className="rounded-lg border border-border bg-card p-3">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <TrendingUp className="h-3.5 w-3.5" /> Growth
+            </div>
+            <div className="mt-1 text-xl font-semibold">
+              {nearbyGrowth === undefined || nearbyGrowth === null
+                ? "—"
+                : `${nearbyGrowth > 0 ? "+" : ""}${Math.round(nearbyGrowth * 10) / 10}%`}
+            </div>
+            <div className="text-[11px] text-muted-foreground">vs previous period</div>
+          </div>
+          <div className="rounded-lg border border-border bg-card p-3">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <AlertTriangle className="h-3.5 w-3.5" /> Outbreaks
+            </div>
+            <div className="mt-1 text-xl font-semibold">{outbreaks.length || alerts.length}</div>
+            <div className="text-[11px] text-muted-foreground">active in your area</div>
+          </div>
+        </section>
 
         <div className="grid gap-4 lg:grid-cols-2">
           <EnvironmentalRiskPanel risk={risk} />
@@ -197,7 +246,10 @@ function PatientPage() {
         </div>
 
         <div className="grid gap-4 lg:grid-cols-3">
-          <Panel title="Recent prediction" icon={<Activity className="h-4 w-4 text-muted-foreground" />}>
+          <Panel
+            title="Recent prediction"
+            icon={<Activity className="h-4 w-4 text-muted-foreground" />}
+          >
             {prediction ? (
               <div className="space-y-1">
                 <div className="text-sm font-medium">{label(prediction.predicted_disease)}</div>
@@ -229,7 +281,10 @@ function PatientPage() {
             )}
           </Panel>
 
-          <Panel title="Nearby clinics" icon={<Hospital className="h-4 w-4 text-muted-foreground" />}>
+          <Panel
+            title="Nearby clinics"
+            icon={<Hospital className="h-4 w-4 text-muted-foreground" />}
+          >
             {dashboard?.nearby_clinics?.length ? (
               <div>
                 {dashboard.nearby_clinics.slice(0, 4).map((c, i) => (
@@ -237,7 +292,9 @@ function PatientPage() {
                     key={c.id ?? i}
                     left={c.name ?? "Clinic"}
                     sub={c.address}
-                    right={c.distance_km !== undefined ? `${c.distance_km.toFixed(1)} km` : undefined}
+                    right={
+                      c.distance_km !== undefined ? `${c.distance_km.toFixed(1)} km` : undefined
+                    }
                   />
                 ))}
               </div>
