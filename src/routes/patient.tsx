@@ -152,6 +152,8 @@ function PatientPage() {
   const activity = dashboard?.disease_activity;
   const cases = activity?.total_cases ?? activity?.case_count ?? 0;
   const growth = activity?.growth_rate ?? activity?.growth_percent;
+  const nearbyCases = nearby?.total_cases ?? nearby?.case_count ?? cases;
+  const nearbyGrowth = nearby?.growth_rate ?? nearby?.growth_percent ?? growth;
   const alerts = dashboard?.outbreak_alerts ?? [];
   const appointment = dashboard?.upcoming_appointments?.[0];
   const prediction = dashboard?.recent_predictions?.[0];
