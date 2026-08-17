@@ -2,7 +2,7 @@ import { toast } from "sonner";
 
 export const API_BASE_URL =
   (import.meta.env["VITE_API_BASE_URL"] as string | undefined)?.replace(/\/$/, "") ||
-  "http://localhost:8000";
+  "https://anixraksha-backend.onrender.com";
 
 export const TOKEN_KEY = "ww_token";
 export const ROLE_KEY = "ww_role";
