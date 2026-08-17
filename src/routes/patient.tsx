@@ -44,9 +44,14 @@ function PatientPage() {
   const [dashboard, setDashboard] = useState<PatientDashboard | null>(null);
   const [risk, setRisk] = useState<EnvironmentalRisk | null>(null);
   const [cells, setCells] = useState<MapCell[]>([]);
+  const [outbreaks, setOutbreaks] = useState<Outbreak[]>([]);
+  const [clinics, setClinics] = useState<Clinic[]>([]);
+  const [nearby, setNearby] = useState<NearbySurveillance | null>(null);
   const [disease, setDisease] = useState("");
   const [days, setDays] = useState(7);
+  const [radiusKm, setRadiusKm] = useState(10);
   const [mapLoading, setMapLoading] = useState(false);
+  const [mapError, setMapError] = useState(false);
 
   const profile = dashboard?.profile;
   const center = {
@@ -66,25 +71,33 @@ function PatientPage() {
 
   const loadMap = useCallback(async () => {
     setMapLoading(true);
+    const geo = {
+      latitude: center.latitude,
+      longitude: center.longitude,
+      radiusKm,
+      disease: disease || undefined,
+      timeWindowDays: days,
+    };
     try {
-      const data = await api<{ cells: MapCell[] }>("/api/v1/surveillance/map", {
-        query: {
-          latitude: center.latitude,
-          longitude: center.longitude,
-          radius_km: 10,
-          disease: disease || undefined,
-          time_window_days: days,
-        },
-        silent: true,
-      });
+      const data = await getSurveillanceMap(geo);
       setCells(data.cells ?? []);
+      setMapError(false);
     } catch {
-      /* keep previous cells */
+      setMapError(true);
     } finally {
       setMapLoading(false);
     }
+    void getOutbreaks(geo)
+      .then(setOutbreaks)
+      .catch(() => setOutbreaks([]));
+    void getNearbySurveillance(geo)
+      .then(setNearby)
+      .catch(() => setNearby(null));
+    void getNearbyClinics(geo)
+      .then(setClinics)
+      .catch(() => setClinics([]));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [center.latitude, center.longitude, disease, days]);
+  }, [center.latitude, center.longitude, disease, days, radiusKm]);
 
   useEffect(() => {
     if (allowed) void loadDashboard();
@@ -92,7 +105,7 @@ function PatientPage() {
 
   useEffect(() => {
     if (!allowed) return;
-    api<EnvironmentalRisk>("/api/v1/environmental-risk/me", { silent: true })
+    getEnvironmentalRisk()
       .then(setRisk)
       .catch(() => setRisk(null));
   }, [allowed]);
@@ -100,7 +113,8 @@ function PatientPage() {
   useEffect(() => {
     if (allowed && dashboard) void loadMap();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [allowed, disease, days, dashboard?.profile?.latitude]);
+  }, [allowed, disease, days, radiusKm, dashboard?.profile?.latitude]);
+
 
   useRealtime(
     useCallback(
