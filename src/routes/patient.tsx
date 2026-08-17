@@ -185,29 +185,6 @@ function PatientPage() {
           </div>
         ) : null}
 
-        <section className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          <div className="rounded-lg border border-border bg-card p-3">
-            <div className="text-xs text-muted-foreground">Local disease risk</div>
-            <div className="mt-1.5">
-              <ActivityBadge level={activity?.activity_level ?? "NORMAL"} />
-            </div>
-          </div>
-          <div className="rounded-lg border border-border bg-card p-3">
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Activity className="h-3.5 w-3.5" /> Cases nearby
-            </div>
-            <div className="mt-1 text-xl font-semibold">{cases}</div>
-          </div>
-          <div className="rounded-lg border border-border bg-card p-3">
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <TrendingUp className="h-3.5 w-3.5" /> Growth
-            </div>
-            <div className="mt-1 text-xl font-semibold">
-              {growth === undefined || growth === null ? "—" : `${Math.round(growth)}%`}
-            </div>
-          </div>
-        </section>
-
         <SurveillanceMap
           cells={cells}
           center={center}
@@ -215,9 +192,50 @@ function PatientPage() {
           onDiseaseChange={setDisease}
           days={days}
           onDaysChange={setDays}
+          radiusKm={radiusKm}
+          onRadiusChange={setRadiusKm}
+          outbreaks={outbreaks}
+          clinics={clinics}
+          error={mapError}
+          onRetry={loadMap}
           onCenter={loadMap}
           loading={mapLoading}
         />
+
+        <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <div className="rounded-lg border border-border bg-card p-3">
+            <div className="text-xs text-muted-foreground">Local disease risk</div>
+            <div className="mt-1.5">
+              <ActivityBadge level={nearby?.activity_level ?? activity?.activity_level ?? "NORMAL"} />
+            </div>
+          </div>
+          <div className="rounded-lg border border-border bg-card p-3">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Activity className="h-3.5 w-3.5" /> Cases nearby
+            </div>
+            <div className="mt-1 text-xl font-semibold">{nearbyCases}</div>
+            <div className="text-[11px] text-muted-foreground">within {radiusKm} km</div>
+          </div>
+          <div className="rounded-lg border border-border bg-card p-3">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <TrendingUp className="h-3.5 w-3.5" /> Growth
+            </div>
+            <div className="mt-1 text-xl font-semibold">
+              {nearbyGrowth === undefined || nearbyGrowth === null
+                ? "—"
+                : `${nearbyGrowth > 0 ? "+" : ""}${Math.round(nearbyGrowth * 10) / 10}%`}
+            </div>
+            <div className="text-[11px] text-muted-foreground">vs previous period</div>
+          </div>
+          <div className="rounded-lg border border-border bg-card p-3">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <AlertTriangle className="h-3.5 w-3.5" /> Outbreaks
+            </div>
+            <div className="mt-1 text-xl font-semibold">{outbreaks.length || alerts.length}</div>
+            <div className="text-[11px] text-muted-foreground">active in your area</div>
+          </div>
+        </section>
+
 
         <div className="grid gap-4 lg:grid-cols-2">
           <EnvironmentalRiskPanel risk={risk} />
