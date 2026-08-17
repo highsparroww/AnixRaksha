@@ -174,3 +174,48 @@ export function label(value?: string | null) {
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
     .join(" ");
 }
+
+export type Outbreak = {
+  id?: string;
+  disease?: string;
+  center_latitude?: number;
+  center_longitude?: number;
+  latitude?: number;
+  longitude?: number;
+  radius_meters?: number;
+  radius_km?: number;
+  severity?: string;
+  case_count?: number;
+  growth_rate?: number;
+  message?: string;
+  prevention_guidance?: string[];
+  detected_at?: string;
+};
+
+export type Clinic = {
+  id?: string;
+  name?: string;
+  clinic_type?: string;
+  type?: string;
+  address?: string;
+  latitude?: number;
+  longitude?: number;
+  distance_km?: number;
+  opening_hours?: string;
+  phone?: string;
+};
+
+export type NearbySurveillance = {
+  total_cases?: number;
+  case_count?: number;
+  radius_km?: number;
+  time_window_days?: number;
+  growth_rate?: number;
+  growth_percent?: number;
+  activity_level?: ActivityLevel;
+  cases_by_status?: Record<string, number>;
+  confirmed_cases?: number;
+  probable_cases?: number;
+  suspected_cases?: number;
+  cases_by_disease?: Record<string, number>;
+};
