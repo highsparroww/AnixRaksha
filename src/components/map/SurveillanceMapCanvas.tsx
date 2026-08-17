@@ -127,11 +127,13 @@ export default function SurveillanceMapCanvas({
       <FitRadius lat={center.latitude} lng={center.longitude} radiusKm={radiusKm} />
 
       {layers.risk ? <HoloHeatLayer cells={cells} /> : null}
-      {layers.risk ? <CellPicker
-        cells={cells}
-        onSelect={(c) => onSelect(c ? { kind: "cell", cell: c } : null)}
-        onHover={(c) => onHover(c ? { kind: "cell", cell: c } : null)}
-      /> : null}
+      {layers.risk ? (
+        <CellPicker
+          cells={cells}
+          onSelect={(c) => onSelect(c ? { kind: "cell", cell: c } : null)}
+          onHover={(c) => onHover(c ? { kind: "cell", cell: c } : null)}
+        />
+      ) : null}
 
       {/* selected radius perimeter */}
       <Circle

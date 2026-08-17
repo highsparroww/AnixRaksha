@@ -122,7 +122,9 @@ function InfoCard({ selection, onClose }: { selection: Selection; onClose: () =>
     return (
       <>
         <Head title={c.name ?? "Clinic"} />
-        {c.clinic_type || c.type ? <Field label="Type" value={label(c.clinic_type ?? c.type)} /> : null}
+        {c.clinic_type || c.type ? (
+          <Field label="Type" value={label(c.clinic_type ?? c.type)} />
+        ) : null}
         {c.address ? <Field label="Address" value={c.address} /> : null}
         {c.distance_km !== undefined ? (
           <Field label="Distance" value={`${c.distance_km.toFixed(1)} km`} />
@@ -154,9 +156,7 @@ function InfoCard({ selection, onClose }: { selection: Selection; onClose: () =>
 }
 
 function Head({ title }: { title: string }) {
-  return (
-    <div className="mb-2 text-[10px] uppercase tracking-[0.22em] text-cyan-300">{title}</div>
-  );
+  return <div className="mb-2 text-[10px] uppercase tracking-[0.22em] text-cyan-300">{title}</div>;
 }
 
 function Field({ label: l, value, color }: { label: string; value: string; color?: string }) {
@@ -259,7 +259,9 @@ export function SurveillanceMap({
           )}
         >
           <div>
-            <div className="mb-1 text-[10px] uppercase tracking-[0.18em] text-slate-500">Radius</div>
+            <div className="mb-1 text-[10px] uppercase tracking-[0.18em] text-slate-500">
+              Radius
+            </div>
             <div className="flex gap-1">
               {RADII.map((r) => (
                 <Chip key={r} active={r === radiusKm} onClick={() => onRadiusChange?.(r)}>
@@ -279,7 +281,9 @@ export function SurveillanceMap({
             </div>
           </div>
           <div>
-            <div className="mb-1 text-[10px] uppercase tracking-[0.18em] text-slate-500">Disease</div>
+            <div className="mb-1 text-[10px] uppercase tracking-[0.18em] text-slate-500">
+              Disease
+            </div>
             <select
               value={disease}
               onChange={(e) => onDiseaseChange(e.target.value)}
@@ -337,9 +341,7 @@ export function SurveillanceMap({
             <div className="text-[10px] uppercase tracking-[0.22em] text-rose-300">
               Surveillance data unavailable
             </div>
-            <p className="mt-1 text-[11px] text-slate-400">
-              Unable to retrieve current map data.
-            </p>
+            <p className="mt-1 text-[11px] text-slate-400">Unable to retrieve current map data.</p>
             <button
               type="button"
               onClick={onRetry}

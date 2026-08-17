@@ -129,7 +129,6 @@ function PatientPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [allowed, disease, days, radiusKm, dashboard?.profile?.latitude]);
 
-
   useRealtime(
     useCallback(
       (event) => {
@@ -209,7 +208,9 @@ function PatientPage() {
           <div className="rounded-lg border border-border bg-card p-3">
             <div className="text-xs text-muted-foreground">Local disease risk</div>
             <div className="mt-1.5">
-              <ActivityBadge level={nearby?.activity_level ?? activity?.activity_level ?? "NORMAL"} />
+              <ActivityBadge
+                level={nearby?.activity_level ?? activity?.activity_level ?? "NORMAL"}
+              />
             </div>
           </div>
           <div className="rounded-lg border border-border bg-card p-3">
@@ -239,14 +240,16 @@ function PatientPage() {
           </div>
         </section>
 
-
         <div className="grid gap-4 lg:grid-cols-2">
           <EnvironmentalRiskPanel risk={risk} />
           <SymptomChecker onSubmitted={loadDashboard} />
         </div>
 
         <div className="grid gap-4 lg:grid-cols-3">
-          <Panel title="Recent prediction" icon={<Activity className="h-4 w-4 text-muted-foreground" />}>
+          <Panel
+            title="Recent prediction"
+            icon={<Activity className="h-4 w-4 text-muted-foreground" />}
+          >
             {prediction ? (
               <div className="space-y-1">
                 <div className="text-sm font-medium">{label(prediction.predicted_disease)}</div>
@@ -278,7 +281,10 @@ function PatientPage() {
             )}
           </Panel>
 
-          <Panel title="Nearby clinics" icon={<Hospital className="h-4 w-4 text-muted-foreground" />}>
+          <Panel
+            title="Nearby clinics"
+            icon={<Hospital className="h-4 w-4 text-muted-foreground" />}
+          >
             {dashboard?.nearby_clinics?.length ? (
               <div>
                 {dashboard.nearby_clinics.slice(0, 4).map((c, i) => (
@@ -286,7 +292,9 @@ function PatientPage() {
                     key={c.id ?? i}
                     left={c.name ?? "Clinic"}
                     sub={c.address}
-                    right={c.distance_km !== undefined ? `${c.distance_km.toFixed(1)} km` : undefined}
+                    right={
+                      c.distance_km !== undefined ? `${c.distance_km.toFixed(1)} km` : undefined
+                    }
                   />
                 ))}
               </div>
