@@ -6,7 +6,21 @@ import { api } from "@/lib/api";
 import { useRequireRole } from "@/lib/auth";
 import { useRealtime } from "@/lib/realtime";
 import { DEFAULT_CENTER, label } from "@/lib/types";
-import type { EnvironmentalRisk, MapCell, PatientDashboard } from "@/lib/types";
+import type {
+  Clinic,
+  EnvironmentalRisk,
+  MapCell,
+  NearbySurveillance,
+  Outbreak,
+  PatientDashboard,
+} from "@/lib/types";
+import {
+  getEnvironmentalRisk,
+  getNearbyClinics,
+  getNearbySurveillance,
+  getOutbreaks,
+  getSurveillanceMap,
+} from "@/lib/surveillance";
 import { Header } from "@/components/Header";
 import { Panel, EmptyText, Row } from "@/components/Panel";
 import { ActivityBadge } from "@/components/ActivityBadge";
