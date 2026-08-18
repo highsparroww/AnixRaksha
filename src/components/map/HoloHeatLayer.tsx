@@ -2,48 +2,46 @@ import { useEffect, useRef } from "react";
 import { useMap } from "react-leaflet";
 import type { ActivityLevel, MapCell } from "@/lib/types";
 
-/** Holographic risk gradient per activity level: [core, mid, edge] rgb triples. */
-const RAMP: Record<ActivityLevel, [number[], number[], number[]]> = {
-  NORMAL: [
-    [125, 249, 255],
-    [34, 211, 238],
-    [14, 116, 144],
-  ],
-  WATCH: [
-    [190, 255, 240],
-    [34, 211, 238],
-    [190, 200, 60],
-  ],
-  ELEVATED: [
-    [255, 244, 170],
-    [250, 204, 21],
-    [234, 120, 20],
-  ],
-  HIGH: [
-    [255, 220, 150],
-    [249, 115, 22],
-    [217, 70, 200],
-  ],
-  CRITICAL: [
-    [255, 190, 220],
-    [232, 60, 160],
-    [220, 30, 60],
-  ],
+/**
+ * Ordered severity ramp. Intensity (density) drives opacity, severity drives hue,
+ * so the layer reads like a geographic data surface rather than neon bubbles.
+ */
+const LEVELS: ActivityLevel[] = ["NORMAL", "WATCH", "ELEVATED", "HIGH", "CRITICAL"];
+
+const LEVEL_COLOR: Record<ActivityLevel, [number, number, number]> = {
+  NORMAL: [56, 189, 248],
+  WATCH: [45, 212, 191],
+  ELEVATED: [250, 204, 21],
+  HIGH: [249, 115, 22],
+  CRITICAL: [225, 61, 92],
 };
 
-const rgba = (c: number[], a: number) => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
+function severityIndex(level?: string) {
+  const i = LEVELS.indexOf((level?.toUpperCase() as ActivityLevel) ?? "NORMAL");
+  return i < 0 ? 0 : i;
+}
 
-function ramp(level?: string) {
-  return RAMP[(level?.toUpperCase() as ActivityLevel) ?? "NORMAL"] ?? RAMP.NORMAL;
+function mixColor(t: number): [number, number, number] {
+  const clamped = Math.min(LEVELS.length - 1, Math.max(0, t));
+  const lo = Math.floor(clamped);
+  const hi = Math.min(LEVELS.length - 1, lo + 1);
+  const f = clamped - lo;
+  const a = LEVEL_COLOR[LEVELS[lo] as ActivityLevel];
+  const b = LEVEL_COLOR[LEVELS[hi] as ActivityLevel];
+  return [
+    Math.round(a[0] + (b[0] - a[0]) * f),
+    Math.round(a[1] + (b[1] - a[1]) * f),
+    Math.round(a[2] + (b[2] - a[2]) * f),
+  ];
 }
 
 /**
- * Canvas heat field drawn above the tiles. One canvas for all cells, so the
- * cost stays constant regardless of how many aggregated cells arrive.
+ * Smooth diffusion heat field: density is accumulated at half resolution into an
+ * offscreen buffer, then colourised, so neighbouring zones blend into organic
+ * regions instead of stacked circles. Redraws on map movement only (no idle loop).
  */
 export default function HoloHeatLayer({ cells }: { cells: MapCell[] }) {
   const map = useMap();
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const cellsRef = useRef(cells);
   cellsRef.current = cells;
 
@@ -51,16 +49,17 @@ export default function HoloHeatLayer({ cells }: { cells: MapCell[] }) {
     const container = map.getContainer();
     const canvas = document.createElement("canvas");
     canvas.style.cssText =
-      "position:absolute;inset:0;z-index:400;pointer-events:none;mix-blend-mode:screen";
+      "position:absolute;inset:0;z-index:350;pointer-events:none;transition:opacity 200ms ease";
     container.appendChild(canvas);
-    canvasRef.current = canvas;
 
-    let frame = 0;
+    const buffer = document.createElement("canvas");
     let raf = 0;
 
-    const draw = () => {
+    const render = () => {
       const ctx = canvas.getContext("2d");
-      if (!ctx) return;
+      const bctx = buffer.getContext("2d", { willReadFrequently: true });
+      if (!ctx || !bctx) return;
+
       const dpr = Math.min(2, window.devicePixelRatio || 1);
       const size = map.getSize();
       if (canvas.width !== size.x * dpr || canvas.height !== size.y * dpr) {
@@ -71,9 +70,21 @@ export default function HoloHeatLayer({ cells }: { cells: MapCell[] }) {
       }
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, size.x, size.y);
-      ctx.globalCompositeOperation = "lighter";
 
       const list = cellsRef.current;
+      if (!list.length) return;
+
+      // Half-resolution accumulation buffer -> natural diffusion when scaled up.
+      const scale = 0.5;
+      const bw = Math.max(1, Math.round(size.x * scale));
+      const bh = Math.max(1, Math.round(size.y * scale));
+      if (buffer.width !== bw || buffer.height !== bh) {
+        buffer.width = bw;
+        buffer.height = bh;
+      }
+      bctx.clearRect(0, 0, bw, bh);
+      bctx.globalCompositeOperation = "lighter";
+
       const maxCount = Math.max(1, ...list.map((c) => c.case_count || 0));
 
       // metres per pixel at the current view
@@ -81,53 +92,73 @@ export default function HoloHeatLayer({ cells }: { cells: MapCell[] }) {
       const b = map.containerPointToLatLng([100, size.y / 2]);
       const mpp = Math.max(0.01, map.distance(a, b) / 100);
 
-      const breathe = 0.94 + 0.06 * Math.sin(frame / 32);
-
       for (const cell of list) {
         const p = map.latLngToContainerPoint([cell.latitude, cell.longitude]);
+        const x = p.x * scale;
+        const y = p.y * scale;
         const intensity = Math.min(1, (cell.case_count || 0) / maxCount);
-        const metres = 500 + intensity * 900;
-        const r = Math.max(26, (metres / mpp) * breathe);
-        if (p.x < -r || p.y < -r || p.x > size.x + r || p.y > size.y + r) continue;
+        const sev = severityIndex(cell.activity_level);
+        const metres = 620 + intensity * 1100;
+        const r = Math.max(18, (metres / mpp) * scale);
+        if (x < -r || y < -r || x > bw + r || y > bh + r) continue;
 
-        const [core, mid, edge] = ramp(cell.activity_level);
-        const alpha = 0.3 + intensity * 0.4;
-
-        const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, r);
-        g.addColorStop(0, rgba(core, alpha));
-        g.addColorStop(0.35, rgba(mid, alpha * 0.75));
-        g.addColorStop(0.7, rgba(edge, alpha * 0.35));
-        g.addColorStop(1, rgba(edge, 0));
-        ctx.fillStyle = g;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
-        ctx.fill();
-
-        // thin holographic perimeter
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, r * 0.55, 0, Math.PI * 2);
-        ctx.strokeStyle = rgba(mid, 0.35);
-        ctx.lineWidth = 1;
-        ctx.stroke();
+        // R channel carries severity, alpha carries density.
+        const sevByte = Math.round((sev / (LEVELS.length - 1)) * 255);
+        const alpha = 0.25 + intensity * 0.55;
+        const g = bctx.createRadialGradient(x, y, 0, x, y, r);
+        g.addColorStop(0, `rgba(${sevByte},0,0,${alpha})`);
+        g.addColorStop(0.55, `rgba(${sevByte},0,0,${alpha * 0.45})`);
+        g.addColorStop(1, `rgba(${sevByte},0,0,0)`);
+        bctx.fillStyle = g;
+        bctx.beginPath();
+        bctx.arc(x, y, r, 0, Math.PI * 2);
+        bctx.fill();
       }
-      ctx.globalCompositeOperation = "source-over";
+
+      // Colourise the accumulated density field.
+      const img = bctx.getImageData(0, 0, bw, bh);
+      const data = img.data;
+      for (let i = 0; i < data.length; i += 4) {
+        const alpha = data[i + 3] as number;
+        if (!alpha) continue;
+        const density = Math.min(1, alpha / 255);
+        // severity stored in R, pre-multiplied by accumulated alpha
+        const sevNorm = Math.min(1, (data[i] as number) / Math.max(1, alpha));
+        const [r, g, bl] = mixColor(sevNorm * (LEVELS.length - 1));
+        data[i] = r;
+        data[i + 1] = g;
+        data[i + 2] = bl;
+        // eased opacity keeps roads and labels legible underneath
+        data[i + 3] = Math.round(Math.min(0.62, Math.pow(density, 0.8) * 0.62) * 255);
+      }
+      bctx.globalCompositeOperation = "source-over";
+      bctx.putImageData(img, 0, 0);
+
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "high";
+      ctx.filter = "blur(6px)";
+      ctx.drawImage(buffer, 0, 0, size.x, size.y);
+      ctx.filter = "none";
     };
 
-    const loop = () => {
-      frame += 1;
-      if (frame % 2 === 0) draw();
-      raf = window.requestAnimationFrame(loop);
+    const draw = () => {
+      window.cancelAnimationFrame(raf);
+      raf = window.requestAnimationFrame(render);
     };
 
-    map.on("move zoom resize viewreset", draw);
-    loop();
+    map.on("move zoom zoomend moveend resize viewreset", draw);
+    draw();
 
     return () => {
       window.cancelAnimationFrame(raf);
-      map.off("move zoom resize viewreset", draw);
+      map.off("move zoom zoomend moveend resize viewreset", draw);
       canvas.remove();
     };
   }, [map]);
+
+  useEffect(() => {
+    map.fire("viewreset");
+  }, [cells, map]);
 
   return null;
 }
