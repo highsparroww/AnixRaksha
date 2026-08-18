@@ -2,7 +2,6 @@ import { api } from "./api";
 import type {
   Clinic,
   DiseaseActivity,
-  EnvironmentalRisk,
   MapCell,
   NearbySurveillance,
   Outbreak,
@@ -50,6 +49,3 @@ export const getNearbyClinics = (p: Geo) =>
     query: { latitude: p.latitude, longitude: p.longitude, radius_km: p.radiusKm },
     silent: true,
   }).then((d) => (Array.isArray(d) ? d : (d.clinics ?? [])));
-
-export const getEnvironmentalRisk = () =>
-  api<EnvironmentalRisk>("/api/v1/environmental-risk/me", { silent: true });

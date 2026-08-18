@@ -5,13 +5,7 @@ import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { useRequireRole } from "@/lib/auth";
 import { useRealtime } from "@/lib/realtime";
-import {
-  CASE_STATUSES,
-  DEFAULT_CENTER,
-  DISEASES,
-  SYMPTOMS,
-  label,
-} from "@/lib/types";
+import { CASE_STATUSES, DEFAULT_CENTER, DISEASES, SYMPTOMS, label } from "@/lib/types";
 import type { DoctorDashboard, MapCell } from "@/lib/types";
 import { Header } from "@/components/Header";
 import { EmptyText, Panel, Row } from "@/components/Panel";
@@ -90,7 +84,6 @@ function DoctorPage() {
     } finally {
       setMapLoading(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [center.latitude, center.longitude, disease, days]);
 
   useEffect(() => {
@@ -99,8 +92,7 @@ function DoctorPage() {
 
   useEffect(() => {
     if (allowed && dashboard) void loadMap();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [allowed, disease, days, dashboard?.profile?.latitude]);
+  }, [allowed, dashboard, loadMap]);
 
   useRealtime(
     useCallback(
@@ -134,7 +126,23 @@ function DoctorPage() {
         onRefresh={loadDashboard}
       />
 
-      <main className="mx-auto max-w-6xl space-y-4 px-4 py-4">
+      <main className="mx-auto max-w-6xl space-y-5 px-4 py-5">
+        <section className="flex flex-wrap items-end justify-between gap-3 rounded-2xl border border-indigo-100 bg-[linear-gradient(125deg,#f4f7ff,#fbfcff_58%,#f0fdfa)] px-5 py-4 shadow-sm">
+          <div>
+            <p className="text-xs font-medium uppercase tracking-[0.14em] text-indigo-700">
+              Clinician workspace
+            </p>
+            <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-900">
+              {profile?.full_name ?? "Community surveillance"}
+            </h1>
+            <p className="mt-1 text-sm text-slate-600">
+              Record cases, manage availability, and watch for local signals.
+            </p>
+          </div>
+          <div className="rounded-lg border border-indigo-100 bg-white/85 px-3 py-2 text-xs text-slate-600">
+            Data is aggregated to protect patient privacy.
+          </div>
+        </section>
         {alerts.length > 0 ? (
           <div className="rounded-md border border-destructive/30 bg-destructive/5 px-4 py-2.5">
             <div className="flex items-start gap-2">
@@ -170,7 +178,7 @@ function DoctorPage() {
                   <Row
                     key={a.id ?? a.appointment_id ?? i}
                     left={a.reason ?? "Consultation"}
-                    sub={fmtDate(a.start_time)}
+                    sub={a.created_at ? `Booked ${fmtDate(a.created_at)}` : "Appointment request"}
                     right={label(a.status)}
                   />
                 ))}
@@ -301,15 +309,21 @@ function CaseRegistration({
         <form onSubmit={submit} className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className={labelClass} htmlFor="disease">Disease</label>
+              <label className={labelClass} htmlFor="disease">
+                Disease
+              </label>
               <select id="disease" name="disease" className={inputClass} defaultValue="CHOLERA">
                 {DISEASES.map((d) => (
-                  <option key={d} value={d}>{label(d)}</option>
+                  <option key={d} value={d}>
+                    {label(d)}
+                  </option>
                 ))}
               </select>
             </div>
             <div>
-              <label className={labelClass} htmlFor="case_status">Status</label>
+              <label className={labelClass} htmlFor="case_status">
+                Status
+              </label>
               <select
                 id="case_status"
                 name="case_status"
@@ -317,16 +331,22 @@ function CaseRegistration({
                 defaultValue="CONFIRMED"
               >
                 {CASE_STATUSES.map((s) => (
-                  <option key={s} value={s}>{label(s)}</option>
+                  <option key={s} value={s}>
+                    {label(s)}
+                  </option>
                 ))}
               </select>
             </div>
             <div>
-              <label className={labelClass} htmlFor="age">Age</label>
+              <label className={labelClass} htmlFor="age">
+                Age
+              </label>
               <input id="age" name="age" type="number" min={0} className={inputClass} />
             </div>
             <div>
-              <label className={labelClass} htmlFor="gender">Gender</label>
+              <label className={labelClass} htmlFor="gender">
+                Gender
+              </label>
               <select id="gender" name="gender" className={inputClass} defaultValue="FEMALE">
                 <option value="FEMALE">Female</option>
                 <option value="MALE">Male</option>
@@ -334,7 +354,9 @@ function CaseRegistration({
               </select>
             </div>
             <div>
-              <label className={labelClass} htmlFor="latitude">Latitude</label>
+              <label className={labelClass} htmlFor="latitude">
+                Latitude
+              </label>
               <input
                 id="latitude"
                 name="latitude"
@@ -345,7 +367,9 @@ function CaseRegistration({
               />
             </div>
             <div>
-              <label className={labelClass} htmlFor="longitude">Longitude</label>
+              <label className={labelClass} htmlFor="longitude">
+                Longitude
+              </label>
               <input
                 id="longitude"
                 name="longitude"
@@ -382,7 +406,9 @@ function CaseRegistration({
           </div>
 
           <div>
-            <label className={labelClass} htmlFor="symptom_onset">Symptom onset</label>
+            <label className={labelClass} htmlFor="symptom_onset">
+              Symptom onset
+            </label>
             <input
               id="symptom_onset"
               name="symptom_onset"
@@ -391,7 +417,9 @@ function CaseRegistration({
             />
           </div>
           <div>
-            <label className={labelClass} htmlFor="notes">Notes</label>
+            <label className={labelClass} htmlFor="notes">
+              Notes
+            </label>
             <input id="notes" name="notes" className={inputClass} />
           </div>
 
@@ -413,7 +441,7 @@ function SlotsPanel({
   slots,
   onChanged,
 }: {
-  slots: { id: string; start_time: string; end_time: string; is_booked?: boolean }[];
+  slots: { id: string; start_time: string; end_time: string; status?: string }[];
   onChanged: () => void;
 }) {
   const [start, setStart] = useState("");
@@ -451,10 +479,15 @@ function SlotsPanel({
   };
 
   return (
-    <Panel title="Available slots" icon={<CalendarClock className="h-4 w-4 text-muted-foreground" />}>
+    <Panel
+      title="Available slots"
+      icon={<CalendarClock className="h-4 w-4 text-muted-foreground" />}
+    >
       <div className="mb-3 flex flex-wrap items-end gap-2">
         <div className="min-w-40 flex-1">
-          <label className={labelClass} htmlFor="slot-start">Start</label>
+          <label className={labelClass} htmlFor="slot-start">
+            Start
+          </label>
           <input
             id="slot-start"
             type="datetime-local"
@@ -464,7 +497,9 @@ function SlotsPanel({
           />
         </div>
         <div className="min-w-40 flex-1">
-          <label className={labelClass} htmlFor="slot-end">End</label>
+          <label className={labelClass} htmlFor="slot-end">
+            End
+          </label>
           <input
             id="slot-end"
             type="datetime-local"
@@ -493,8 +528,8 @@ function SlotsPanel({
               left={fmtDate(s.start_time)}
               sub={`until ${fmtDate(s.end_time)}`}
               right={
-                s.is_booked ? (
-                  "Booked"
+                s.status && s.status !== "AVAILABLE" ? (
+                  label(s.status)
                 ) : (
                   <button
                     type="button"

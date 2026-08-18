@@ -1,21 +1,21 @@
 import { useCallback, useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { AlertTriangle, Activity, CalendarClock, Hospital, TrendingUp } from "lucide-react";
+import {
+  AlertTriangle,
+  Activity,
+  CalendarClock,
+  Hospital,
+  MapPin,
+  ShieldCheck,
+  TrendingUp,
+} from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { useRequireRole } from "@/lib/auth";
 import { useRealtime } from "@/lib/realtime";
 import { DEFAULT_CENTER, label } from "@/lib/types";
-import type {
-  Clinic,
-  EnvironmentalRisk,
-  MapCell,
-  NearbySurveillance,
-  Outbreak,
-  PatientDashboard,
-} from "@/lib/types";
+import type { Clinic, MapCell, NearbySurveillance, Outbreak, PatientDashboard } from "@/lib/types";
 import {
-  getEnvironmentalRisk,
   getNearbyClinics,
   getNearbySurveillance,
   getOutbreaks,
@@ -26,7 +26,6 @@ import { Panel, EmptyText, Row } from "@/components/Panel";
 import { ActivityBadge } from "@/components/ActivityBadge";
 import { SurveillanceMap } from "@/components/map/SurveillanceMap";
 import { SymptomChecker } from "@/components/SymptomChecker";
-import { EnvironmentalRiskPanel } from "@/components/EnvironmentalRiskPanel";
 
 export const Route = createFileRoute("/patient")({
   head: () => ({
@@ -56,7 +55,6 @@ function fmtDate(value?: string) {
 function PatientPage() {
   const allowed = useRequireRole("PATIENT");
   const [dashboard, setDashboard] = useState<PatientDashboard | null>(null);
-  const [risk, setRisk] = useState<EnvironmentalRisk | null>(null);
   const [cells, setCells] = useState<MapCell[]>([]);
   const [outbreaks, setOutbreaks] = useState<Outbreak[]>([]);
   const [clinics, setClinics] = useState<Clinic[]>([]);
@@ -110,7 +108,6 @@ function PatientPage() {
     void getNearbyClinics(geo)
       .then(setClinics)
       .catch(() => setClinics([]));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [center.latitude, center.longitude, disease, days, radiusKm]);
 
   useEffect(() => {
@@ -118,16 +115,8 @@ function PatientPage() {
   }, [allowed, loadDashboard]);
 
   useEffect(() => {
-    if (!allowed) return;
-    getEnvironmentalRisk()
-      .then(setRisk)
-      .catch(() => setRisk(null));
-  }, [allowed]);
-
-  useEffect(() => {
     if (allowed && dashboard) void loadMap();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [allowed, disease, days, radiusKm, dashboard?.profile?.latitude]);
+  }, [allowed, dashboard, loadMap]);
 
   useRealtime(
     useCallback(
@@ -151,9 +140,8 @@ function PatientPage() {
 
   const activity = dashboard?.disease_activity;
   const cases = activity?.total_cases ?? activity?.case_count ?? 0;
-  const growth = activity?.growth_rate ?? activity?.growth_percent;
-  const nearbyCases = nearby?.total_cases ?? nearby?.case_count ?? cases;
-  const nearbyGrowth = nearby?.growth_rate ?? nearby?.growth_percent ?? growth;
+  const growth = activity?.growth_percentage;
+  const nearbyCases = nearby?.total_cases ?? cases;
   const alerts = dashboard?.outbreak_alerts ?? [];
   const appointment = dashboard?.upcoming_appointments?.[0];
   const prediction = dashboard?.recent_predictions?.[0];
@@ -167,7 +155,31 @@ function PatientPage() {
         onRefresh={loadDashboard}
       />
 
-      <main className="mx-auto max-w-6xl space-y-4 px-4 py-4">
+      <main className="mx-auto max-w-6xl space-y-5 px-4 py-5">
+        <section className="rounded-2xl border border-sky-200/70 bg-[linear-gradient(125deg,#effaff_0%,#f8fcff_54%,#eefbf5_100%)] px-5 py-5 shadow-sm">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-1.5 text-xs font-medium text-sky-800">
+                <MapPin className="h-3.5 w-3.5" /> Your local health overview
+              </div>
+              <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-900">
+                {profile?.full_name
+                  ? `Hello, ${profile.full_name.split(" ")[0]}`
+                  : "Stay informed, stay prepared"}
+              </h1>
+              <p className="mt-1 max-w-xl text-sm text-slate-600">
+                Monitor anonymised disease activity around you and record symptoms when you need
+                guidance.
+              </p>
+            </div>
+            <div className="rounded-xl border border-sky-200 bg-white/80 px-3 py-2 text-xs text-slate-600">
+              <div className="flex items-center gap-1.5 font-medium text-slate-800">
+                <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" /> Privacy protected
+              </div>
+              <div className="mt-0.5">Only area-level case data is shown</div>
+            </div>
+          </div>
+        </section>
         {alerts.length > 0 ? (
           <div className="rounded-md border border-destructive/30 bg-destructive/5 px-4 py-2.5">
             <div className="flex items-start gap-2">
@@ -205,7 +217,7 @@ function PatientPage() {
         />
 
         <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <div className="rounded-lg border border-border bg-card p-3">
+          <div className="rounded-xl border border-border bg-card p-3 shadow-sm">
             <div className="text-xs text-muted-foreground">Local disease risk</div>
             <div className="mt-1.5">
               <ActivityBadge
@@ -213,25 +225,25 @@ function PatientPage() {
               />
             </div>
           </div>
-          <div className="rounded-lg border border-border bg-card p-3">
+          <div className="rounded-xl border border-border bg-card p-3 shadow-sm">
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <Activity className="h-3.5 w-3.5" /> Cases nearby
             </div>
             <div className="mt-1 text-xl font-semibold">{nearbyCases}</div>
             <div className="text-[11px] text-muted-foreground">within {radiusKm} km</div>
           </div>
-          <div className="rounded-lg border border-border bg-card p-3">
+          <div className="rounded-xl border border-border bg-card p-3 shadow-sm">
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <TrendingUp className="h-3.5 w-3.5" /> Growth
             </div>
             <div className="mt-1 text-xl font-semibold">
-              {nearbyGrowth === undefined || nearbyGrowth === null
+              {growth === undefined || growth === null
                 ? "—"
-                : `${nearbyGrowth > 0 ? "+" : ""}${Math.round(nearbyGrowth * 10) / 10}%`}
+                : `${growth > 0 ? "+" : ""}${Math.round(growth * 10) / 10}%`}
             </div>
             <div className="text-[11px] text-muted-foreground">vs previous period</div>
           </div>
-          <div className="rounded-lg border border-border bg-card p-3">
+          <div className="rounded-xl border border-border bg-card p-3 shadow-sm">
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <AlertTriangle className="h-3.5 w-3.5" /> Outbreaks
             </div>
@@ -240,10 +252,7 @@ function PatientPage() {
           </div>
         </section>
 
-        <div className="grid gap-4 lg:grid-cols-2">
-          <EnvironmentalRiskPanel risk={risk} />
-          <SymptomChecker onSubmitted={loadDashboard} />
-        </div>
+        <SymptomChecker onSubmitted={loadDashboard} />
 
         <div className="grid gap-4 lg:grid-cols-3">
           <Panel
@@ -273,7 +282,11 @@ function PatientPage() {
             {appointment ? (
               <Row
                 left={appointment.doctor_name ?? appointment.clinic_name ?? "Appointment"}
-                sub={fmtDate(appointment.start_time)}
+                sub={
+                  appointment.created_at
+                    ? `Requested ${fmtDate(appointment.created_at)}`
+                    : "Appointment request"
+                }
                 right={label(appointment.status)}
               />
             ) : (

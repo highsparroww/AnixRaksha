@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Bell, Check, Droplets, LogOut } from "lucide-react";
+import { Bell, Check, Droplets, LogOut, RefreshCw } from "lucide-react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import type { Notification } from "@/lib/types";
@@ -114,6 +114,15 @@ export function Header({
               </div>
             ) : null}
           </div>
+
+          <button
+            type="button"
+            onClick={onRefresh}
+            aria-label="Refresh dashboard"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
+          >
+            <RefreshCw className="h-4 w-4" />
+          </button>
 
           <button
             type="button"

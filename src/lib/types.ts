@@ -64,20 +64,21 @@ export type Appointment = {
   doctor_name?: string;
   clinic_name?: string;
   reason?: string;
+  created_at?: string;
+  health_summary_shared?: boolean;
 };
 
 export type Slot = {
   id: string;
   start_time: string;
   end_time: string;
-  is_booked?: boolean;
+  status?: string;
 };
 
 export type DiseaseActivity = {
   total_cases?: number;
   case_count?: number;
-  growth_rate?: number;
-  growth_percent?: number;
+  growth_percentage?: number;
   activity_level?: ActivityLevel;
   radius_km?: number;
   time_window_days?: number;
@@ -207,15 +208,9 @@ export type Clinic = {
 
 export type NearbySurveillance = {
   total_cases?: number;
-  case_count?: number;
-  radius_km?: number;
   time_window_days?: number;
-  growth_rate?: number;
-  growth_percent?: number;
-  activity_level?: ActivityLevel;
-  cases_by_status?: Record<string, number>;
-  confirmed_cases?: number;
-  probable_cases?: number;
-  suspected_cases?: number;
+  suspected?: number;
+  probable?: number;
+  confirmed?: number;
   cases_by_disease?: Record<string, number>;
 };

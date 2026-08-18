@@ -95,9 +95,7 @@ function AuthPage() {
           <Droplets className="h-6 w-6 text-primary" />
           <div>
             <h1 className="text-lg font-semibold tracking-tight">WaterWatch</h1>
-            <p className="text-xs text-muted-foreground">
-              Water-borne disease surveillance
-            </p>
+            <p className="text-xs text-muted-foreground">Water-borne disease surveillance</p>
           </div>
         </div>
 
@@ -127,7 +125,9 @@ function AuthPage() {
                       type="button"
                       onClick={() => setFormRole(r)}
                       className={`rounded-sm py-1.5 ${
-                        formRole === r ? "bg-primary text-primary-foreground" : "text-muted-foreground"
+                        formRole === r
+                          ? "bg-primary text-primary-foreground"
+                          : "text-muted-foreground"
                       }`}
                     >
                       {r === "PATIENT" ? "Patient" : "Doctor"}
@@ -136,21 +136,29 @@ function AuthPage() {
                 </div>
 
                 <div>
-                  <label className={labelClass} htmlFor="full_name">Full name</label>
+                  <label className={labelClass} htmlFor="full_name">
+                    Full name
+                  </label>
                   <input id="full_name" name="full_name" required className={inputClass} />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className={labelClass} htmlFor="phone">Phone</label>
+                    <label className={labelClass} htmlFor="phone">
+                      Phone
+                    </label>
                     <input id="phone" name="phone" className={inputClass} />
                   </div>
                   <div>
-                    <label className={labelClass} htmlFor="age">Age</label>
+                    <label className={labelClass} htmlFor="age">
+                      Age
+                    </label>
                     <input id="age" name="age" type="number" min={0} className={inputClass} />
                   </div>
                 </div>
                 <div>
-                  <label className={labelClass} htmlFor="gender">Gender</label>
+                  <label className={labelClass} htmlFor="gender">
+                    Gender
+                  </label>
                   <select id="gender" name="gender" className={inputClass} defaultValue="FEMALE">
                     <option value="FEMALE">Female</option>
                     <option value="MALE">Male</option>
@@ -160,11 +168,15 @@ function AuthPage() {
                 {formRole === "DOCTOR" ? (
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className={labelClass} htmlFor="specialization">Specialization</label>
+                      <label className={labelClass} htmlFor="specialization">
+                        Specialization
+                      </label>
                       <input id="specialization" name="specialization" className={inputClass} />
                     </div>
                     <div>
-                      <label className={labelClass} htmlFor="license_number">License no.</label>
+                      <label className={labelClass} htmlFor="license_number">
+                        License no.
+                      </label>
                       <input id="license_number" name="license_number" className={inputClass} />
                     </div>
                   </div>
@@ -181,16 +193,20 @@ function AuthPage() {
             ) : null}
 
             <div>
-              <label className={labelClass} htmlFor="email">Email</label>
+              <label className={labelClass} htmlFor="email">
+                Email
+              </label>
               <input id="email" name="email" type="email" required className={inputClass} />
             </div>
             <div>
-              <label className={labelClass} htmlFor="password">Password</label>
+              <label className={labelClass} htmlFor="password">
+                Password
+              </label>
               <input
                 id="password"
                 name="password"
                 type="password"
-                minLength={6}
+                minLength={8}
                 required
                 className={inputClass}
               />

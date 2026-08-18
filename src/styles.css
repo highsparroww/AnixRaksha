@@ -140,7 +140,13 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+    min-width: 320px;
+    text-rendering: optimizeLegibility;
   }
+}
+
+::selection {
+  background: oklch(0.8 0.09 220 / 55%);
 }
 
 /* --- Geographic health intelligence map --- */
