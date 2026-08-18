@@ -17,7 +17,7 @@ const WINDOWS: { label: string; value: number }[] = [
 ];
 
 const glass =
-  "rounded-lg border border-cyan-300/15 bg-slate-950/70 backdrop-blur-md shadow-[0_0_24px_-12px_rgba(34,211,238,0.6)]";
+  "rounded-lg border border-slate-700/60 bg-slate-900/85 backdrop-blur-md shadow-[0_10px_30px_-16px_rgba(2,6,23,0.9)]";
 
 function Chip({
   active,
@@ -33,10 +33,10 @@ function Chip({
       type="button"
       onClick={onClick}
       className={cn(
-        "rounded-md px-2 py-1 text-[11px] font-medium tracking-wide transition-colors",
+        "rounded-md px-2.5 py-1.5 text-[11px] font-medium tracking-wide transition-colors",
         active
-          ? "bg-cyan-400/15 text-cyan-200 ring-1 ring-cyan-300/40"
-          : "text-slate-400 hover:text-slate-200",
+          ? "bg-slate-100/10 text-slate-100 ring-1 ring-slate-400/40"
+          : "text-slate-400 hover:bg-slate-100/5 hover:text-slate-200",
       )}
     >
       {children}
@@ -48,8 +48,8 @@ function LoadingOverlay() {
   return (
     <div className="pointer-events-none absolute inset-0 z-[600] flex items-center justify-center">
       <div className={cn(glass, "flex items-center gap-2 px-3 py-2")}>
-        <Radar className="h-3.5 w-3.5 animate-spin text-cyan-300" />
-        <span className="text-[11px] uppercase tracking-[0.18em] text-cyan-100">
+        <Radar className="h-3.5 w-3.5 animate-spin text-sky-300" />
+        <span className="text-[11px] uppercase tracking-[0.18em] text-slate-200">
           Loading surveillance data…
         </span>
       </div>
@@ -63,7 +63,7 @@ function InfoCard({ selection, onClose }: { selection: Selection; onClose: () =>
   const body = (() => {
     if (selection.kind === "cell") {
       const c = selection.cell;
-      const color = ACTIVITY_COLORS[c.activity_level] ?? "#22d3ee";
+      const color = ACTIVITY_COLORS[c.activity_level] ?? "#38bdf8";
       const entries = Object.entries(c.diseases ?? {});
       const max = Math.max(1, ...entries.map(([, n]) => n));
       return (
@@ -156,7 +156,7 @@ function InfoCard({ selection, onClose }: { selection: Selection; onClose: () =>
 }
 
 function Head({ title }: { title: string }) {
-  return <div className="mb-2 text-[10px] uppercase tracking-[0.22em] text-cyan-300">{title}</div>;
+  return <div className="mb-2 text-[10px] uppercase tracking-[0.2em] text-slate-400">{title}</div>;
 }
 
 function Field({ label: l, value, color }: { label: string; value: string; color?: string }) {
@@ -211,9 +211,9 @@ export function SurveillanceMap({
   const shown = selection ?? hover;
 
   return (
-    <section className="relative overflow-hidden rounded-xl border border-cyan-300/15 bg-slate-950">
-      <header className="flex flex-wrap items-center justify-between gap-2 border-b border-cyan-300/10 px-4 py-2.5">
-        <h2 className="flex items-center gap-2 text-[11px] uppercase tracking-[0.22em] text-cyan-200">
+    <section className="relative overflow-hidden rounded-xl border border-slate-700/60 bg-slate-900">
+      <header className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-700/60 px-4 py-2.5">
+        <h2 className="flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-slate-200">
           <Radar className="h-3.5 w-3.5" />
           Disease surveillance
         </h2>
@@ -245,7 +245,7 @@ export function SurveillanceMap({
         <button
           type="button"
           onClick={() => setControlsOpen((v) => !v)}
-          className={cn(glass, "absolute left-3 top-3 z-[700] p-2 text-cyan-200 md:hidden")}
+          className={cn(glass, "absolute left-3 top-3 z-[700] p-2.5 text-slate-200 md:hidden")}
           aria-label="Map controls"
         >
           <SlidersHorizontal className="h-4 w-4" />
@@ -254,7 +254,7 @@ export function SurveillanceMap({
         <div
           className={cn(
             glass,
-            "absolute left-3 top-14 z-[700] w-52 space-y-2.5 p-3 md:top-3",
+            "absolute left-3 top-14 z-[700] w-52 space-y-2.5 p-3 md:top-3 md:w-56",
             controlsOpen ? "block" : "hidden md:block",
           )}
         >
@@ -288,7 +288,7 @@ export function SurveillanceMap({
               value={disease}
               onChange={(e) => onDiseaseChange(e.target.value)}
               aria-label="Filter by disease"
-              className="h-7 w-full rounded-md border border-cyan-300/20 bg-slate-900/80 px-1.5 text-[11px] text-slate-200 outline-none focus:ring-1 focus:ring-cyan-300/50"
+              className="h-8 w-full rounded-md border border-slate-600/60 bg-slate-800/80 px-2 text-[11px] text-slate-200 outline-none focus:ring-1 focus:ring-sky-400/50"
             >
               <option value="">All diseases</option>
               {DISEASES.map((d) => (
@@ -315,7 +315,7 @@ export function SurveillanceMap({
                     type="checkbox"
                     checked={layers[key]}
                     onChange={(e) => setLayers((l) => ({ ...l, [key]: e.target.checked }))}
-                    className="h-3 w-3 accent-cyan-400"
+                    className="h-3.5 w-3.5 accent-sky-500"
                   />
                   {text}
                 </label>
@@ -328,9 +328,9 @@ export function SurveillanceMap({
               setRecenterNonce((n) => n + 1);
               onCenter();
             }}
-            className="flex w-full items-center justify-center gap-1.5 rounded-md border border-cyan-300/25 py-1 text-[11px] text-cyan-200 hover:bg-cyan-400/10"
+            className="flex w-full items-center justify-center gap-1.5 rounded-md border border-slate-600/70 py-1.5 text-[11px] text-slate-200 transition-colors hover:bg-slate-100/10"
           >
-            <Crosshair className="h-3 w-3" /> Locate me
+            <Crosshair className="h-3.5 w-3.5" /> Focus on my area
           </button>
         </div>
 
@@ -345,7 +345,7 @@ export function SurveillanceMap({
             <button
               type="button"
               onClick={onRetry}
-              className="mt-2 inline-flex items-center gap-1.5 rounded-md border border-cyan-300/25 px-2 py-1 text-[11px] text-cyan-200 hover:bg-cyan-400/10"
+              className="mt-2 inline-flex items-center gap-1.5 rounded-md border border-slate-600/70 px-2.5 py-1.5 text-[11px] text-slate-200 hover:bg-slate-100/10"
             >
               <RotateCw className="h-3 w-3" /> Retry
             </button>
@@ -357,7 +357,7 @@ export function SurveillanceMap({
               "pointer-events-none absolute left-1/2 top-1/2 z-[650] w-64 -translate-x-1/2 -translate-y-1/2 p-3 text-center",
             )}
           >
-            <div className="text-[10px] uppercase tracking-[0.22em] text-cyan-300">
+            <div className="text-[10px] uppercase tracking-[0.2em] text-slate-300">
               No active disease signal
             </div>
             <p className="mt-1 text-[11px] text-slate-400">
@@ -366,21 +366,21 @@ export function SurveillanceMap({
           </div>
         ) : null}
 
-        <div className={cn(glass, "absolute bottom-3 right-3 z-[650] p-2.5 text-[11px]")}>
+        <div className={cn(glass, "absolute bottom-3 left-3 z-[650] p-2.5 text-[11px]")}>
           <div className="mb-1.5 text-[10px] uppercase tracking-[0.18em] text-slate-500">
             Activity
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="h-1.5 w-24 rounded-full bg-[linear-gradient(90deg,#22d3ee,#facc15,#f97316,#e83ca0,#dc1e3c)]" />
+            <span className="h-1.5 w-28 rounded-full bg-[linear-gradient(90deg,#38bdf8,#2dd4bf,#facc15,#f97316,#e13d5c)]" />
           </div>
           <div className="mt-1 flex justify-between text-[9px] uppercase tracking-wide text-slate-500">
-            <span>Normal</span>
+            <span>Low</span>
             <span>Critical</span>
           </div>
         </div>
       </div>
 
-      <p className="border-t border-cyan-300/10 px-4 py-2 text-[10px] text-slate-500">
+      <p className="border-t border-slate-700/60 px-4 py-2 text-[10px] text-slate-500">
         Aggregated, anonymised area data only. Individual cases are never shown.
       </p>
     </section>
