@@ -1,6 +1,14 @@
-import { useEffect, useMemo, useRef } from "react";
+import { Fragment, useEffect, useMemo, useRef } from "react";
 import L from "leaflet";
-import { Circle, MapContainer, Marker, TileLayer, useMap, useMapEvents } from "react-leaflet";
+import {
+  Circle,
+  MapContainer,
+  Marker,
+  TileLayer,
+  ZoomControl,
+  useMap,
+  useMapEvents,
+} from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import HoloHeatLayer from "./HoloHeatLayer";
 import type { Clinic, MapCell, Outbreak } from "@/lib/types";
@@ -192,6 +200,7 @@ export default function SurveillanceMapCanvas({
         url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
         maxZoom={19}
       />
+      <ZoomControl position="bottomright" />
       <SmoothWheel />
       <DragCursor />
       <Recenter lat={center.latitude} lng={center.longitude} nonce={recenterNonce} />
@@ -229,7 +238,7 @@ export default function SurveillanceMapCanvas({
             const color = SEVERITY_COLOR[(o.severity ?? "").toUpperCase()] ?? "#f97316";
             const key = o.id ?? `${lat},${lng},${i}`;
             return (
-              <div key={key}>
+              <Fragment key={key}>
                 <Circle
                   center={[lat, lng]}
                   radius={radius}
@@ -252,7 +261,7 @@ export default function SurveillanceMapCanvas({
                     mouseout: () => onHover(null),
                   }}
                 />
-              </div>
+              </Fragment>
             );
           })
         : null}
