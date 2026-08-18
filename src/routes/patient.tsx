@@ -25,7 +25,7 @@ import { Header } from "@/components/Header";
 import { Panel, EmptyText, Row } from "@/components/Panel";
 import { ActivityBadge } from "@/components/ActivityBadge";
 import { SurveillanceMap } from "@/components/map/SurveillanceMap";
-import { SymptomChecker } from "@/components/SymptomChecker";
+import { HealthAssistantChat } from "@/components/HealthAssistantChat";
 
 export const Route = createFileRoute("/patient")({
   head: () => ({
@@ -252,7 +252,7 @@ function PatientPage() {
           </div>
         </section>
 
-        <SymptomChecker onSubmitted={loadDashboard} />
+        <HealthAssistantChat onSubmitted={loadDashboard} />
 
         <div className="grid gap-4 lg:grid-cols-3">
           <Panel
