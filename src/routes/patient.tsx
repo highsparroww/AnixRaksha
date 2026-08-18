@@ -14,9 +14,17 @@ import { api } from "@/lib/api";
 import { useRequireRole } from "@/lib/auth";
 import { useRealtime } from "@/lib/realtime";
 import { DEFAULT_CENTER, label } from "@/lib/types";
-import type { Clinic, MapCell, NearbySurveillance, Outbreak, PatientDashboard } from "@/lib/types";
+import type {
+  Clinic,
+  Forecast,
+  MapCell,
+  NearbySurveillance,
+  Outbreak,
+  PatientDashboard,
+} from "@/lib/types";
 import {
   getNearbyClinics,
+  getForecastMap,
   getNearbySurveillance,
   getOutbreaks,
   getSurveillanceMap,
@@ -56,6 +64,7 @@ function PatientPage() {
   const allowed = useRequireRole("PATIENT");
   const [dashboard, setDashboard] = useState<PatientDashboard | null>(null);
   const [cells, setCells] = useState<MapCell[]>([]);
+  const [forecasts, setForecasts] = useState<Forecast[]>([]);
   const [outbreaks, setOutbreaks] = useState<Outbreak[]>([]);
   const [clinics, setClinics] = useState<Clinic[]>([]);
   const [nearby, setNearby] = useState<NearbySurveillance | null>(null);
@@ -108,6 +117,9 @@ function PatientPage() {
     void getNearbyClinics(geo)
       .then(setClinics)
       .catch(() => setClinics([]));
+    void getForecastMap()
+      .then((data) => setForecasts(data.forecasts ?? []))
+      .catch(() => setForecasts([]));
   }, [center.latitude, center.longitude, disease, days, radiusKm]);
 
   useEffect(() => {
@@ -201,6 +213,7 @@ function PatientPage() {
 
         <SurveillanceMap
           cells={cells}
+          forecasts={forecasts}
           center={center}
           disease={disease}
           onDiseaseChange={setDisease}

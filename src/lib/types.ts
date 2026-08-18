@@ -9,6 +9,19 @@ export type MapCell = {
   activity_level: ActivityLevel;
 };
 
+export type Forecast = {
+  id: string;
+  disease: string;
+  latitude: number;
+  longitude: number;
+  radius_km: number;
+  risk_level: ActivityLevel;
+  confidence: number;
+  explanation: Record<string, unknown>;
+  forecast_start: string;
+  forecast_end: string;
+};
+
 export type Notification = {
   id: string;
   title?: string;

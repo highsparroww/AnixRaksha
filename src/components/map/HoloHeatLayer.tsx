@@ -40,7 +40,13 @@ function mixColor(t: number): [number, number, number] {
  * offscreen buffer, then colourised, so neighbouring zones blend into organic
  * regions instead of stacked circles. Redraws on map movement only (no idle loop).
  */
-export default function HoloHeatLayer({ cells }: { cells: MapCell[] }) {
+export default function HoloHeatLayer({
+  cells,
+  palette = "observed",
+}: {
+  cells: MapCell[];
+  palette?: "observed" | "forecast";
+}) {
   const map = useMap();
   const cellsRef = useRef(cells);
   cellsRef.current = cells;
@@ -124,7 +130,14 @@ export default function HoloHeatLayer({ cells }: { cells: MapCell[] }) {
         const density = Math.min(1, alpha / 255);
         // severity stored in R, pre-multiplied by accumulated alpha
         const sevNorm = Math.min(1, (data[i] as number) / Math.max(1, alpha));
-        const [r, g, bl] = mixColor(sevNorm * (LEVELS.length - 1));
+        const [r, g, bl] =
+          palette === "forecast"
+            ? [
+                145 + Math.round(sevNorm * 75),
+                70 + Math.round(sevNorm * 35),
+                220 + Math.round(sevNorm * 20),
+              ]
+            : mixColor(sevNorm * (LEVELS.length - 1));
         data[i] = r;
         data[i + 1] = g;
         data[i + 2] = bl;
@@ -154,7 +167,7 @@ export default function HoloHeatLayer({ cells }: { cells: MapCell[] }) {
       map.off("move zoom zoomend moveend resize viewreset", draw);
       canvas.remove();
     };
-  }, [map]);
+  }, [map, palette]);
 
   useEffect(() => {
     map.fire("viewreset");

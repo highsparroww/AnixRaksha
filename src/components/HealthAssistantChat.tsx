@@ -32,6 +32,8 @@ export function HealthAssistantChat({ onSubmitted }: { onSubmitted?: (() => void
   const [suggestions, setSuggestions] = useState<Suggestions | null>(null);
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<Prediction | null>(null);
+  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [shareSummary, setShareSummary] = useState(false);
 
   useEffect(() => {
     api<Suggestions>("/api/v1/patient/symptom-suggestions", { silent: true })
@@ -58,6 +60,7 @@ export function HealthAssistantChat({ onSubmitted }: { onSubmitted?: (() => void
     severity,
     temperature: temperature ? Number(temperature) : null,
     notes: notes || null,
+    share_with_clinician: shareSummary,
   });
 
   const persistIntake = async () => {
@@ -173,105 +176,158 @@ export function HealthAssistantChat({ onSubmitted }: { onSubmitted?: (() => void
               );
             })}
           </div>
-        </div>
-
-        <div className="grid gap-3 sm:grid-cols-3">
-          <label className="text-xs font-medium text-muted-foreground">
-            Duration (hours)
-            <input
-              type="number"
-              min={1}
-              value={duration}
-              onChange={(event) => setDuration(Number(event.target.value))}
-              className={`${inputClass} mt-1`}
-            />
-          </label>
-          <label className="text-xs font-medium text-muted-foreground">
-            Severity
-            <select
-              value={severity}
-              onChange={(event) => setSeverity(event.target.value)}
-              className={`${inputClass} mt-1`}
+          {step === 1 ? (
+            <button
+              type="button"
+              onClick={() =>
+                selected.length ? setStep(2) : toast.error("Choose a symptom to continue.")
+              }
+              className="mt-3 inline-flex h-9 items-center gap-2 rounded-lg bg-sky-700 px-3.5 text-sm font-medium text-white hover:bg-sky-800"
             >
-              {SEVERITIES.map((item) => (
-                <option key={item} value={item}>
-                  {label(item)}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="text-xs font-medium text-muted-foreground">
-            Temperature (°C)
-            <input
-              type="number"
-              step="0.1"
-              value={temperature}
-              onChange={(event) => setTemperature(event.target.value)}
-              className={`${inputClass} mt-1`}
-              placeholder="Optional"
-            />
-          </label>
-        </div>
-
-        <label className="block text-xs font-medium text-muted-foreground">
-          Anything else you want to add?
-          <textarea
-            value={notes}
-            onChange={(event) => setNotes(event.target.value)}
-            rows={2}
-            className="mt-1.5 w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none transition-shadow focus:ring-2 focus:ring-sky-500/30"
-            placeholder="Optional notes — only your structured summary is saved."
-          />
-        </label>
-
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={saveIntake}
-            disabled={busy || !selected.length}
-            className="inline-flex h-10 items-center gap-2 rounded-lg border border-border px-3.5 text-sm font-medium hover:bg-accent disabled:opacity-50"
-          >
-            {conversation ? <CheckCircle2 className="h-4 w-4 text-emerald-600" /> : null} Save
-            summary
-          </button>
-          <button
-            type="button"
-            onClick={getGuidance}
-            disabled={busy || !selected.length}
-            className="inline-flex h-10 items-center gap-2 rounded-lg bg-sky-700 px-4 text-sm font-medium text-white hover:bg-sky-800 disabled:opacity-50"
-          >
-            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} Get
-            guidance
-          </button>
-          {conversation ? (
-            <span className="text-xs text-emerald-700">
-              Structured summary saved — no chat transcript is stored.
-            </span>
+              Continue <Send className="h-3.5 w-3.5" />
+            </button>
           ) : null}
         </div>
 
-        {result ? (
-          <div className="rounded-xl border border-sky-100 bg-sky-50/60 p-3.5">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="text-sm font-semibold text-slate-900">
-                Educational guidance: {label(result.predicted_disease)}
-              </span>
-              <span className="text-xs text-slate-600">
-                {Math.round(result.confidence * 100)}% model confidence
-              </span>
+        {step >= 2 ? (
+          <>
+            <div className="max-w-2xl rounded-2xl rounded-tl-sm bg-sky-50 px-3.5 py-3 text-sm text-slate-700">
+              Thanks — I have noted {selected.map(label).join(", ")}. How long have you felt this
+              way, and how severe does it feel?
             </div>
-            {result.precautions?.length ? (
-              <ul className="mt-2 list-inside list-disc space-y-1 text-sm text-slate-700">
-                {result.precautions.map((item) => (
-                  <li key={item}>{item}</li>
-                ))}
-              </ul>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <label className="text-xs font-medium text-muted-foreground">
+                Duration (hours)
+                <input
+                  type="number"
+                  min={1}
+                  value={duration}
+                  onChange={(event) => setDuration(Number(event.target.value))}
+                  className={`${inputClass} mt-1`}
+                />
+              </label>
+              <label className="text-xs font-medium text-muted-foreground">
+                Severity
+                <select
+                  value={severity}
+                  onChange={(event) => setSeverity(event.target.value)}
+                  className={`${inputClass} mt-1`}
+                >
+                  {SEVERITIES.map((item) => (
+                    <option key={item} value={item}>
+                      {label(item)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="text-xs font-medium text-muted-foreground">
+                Temperature (°C)
+                <input
+                  type="number"
+                  step="0.1"
+                  value={temperature}
+                  onChange={(event) => setTemperature(event.target.value)}
+                  className={`${inputClass} mt-1`}
+                  placeholder="Optional"
+                />
+              </label>
+            </div>
+
+            {step === 2 ? (
+              <button
+                type="button"
+                onClick={() => setStep(3)}
+                className="inline-flex h-9 items-center gap-2 rounded-lg bg-sky-700 px-3.5 text-sm font-medium text-white hover:bg-sky-800"
+              >
+                Continue <Send className="h-3.5 w-3.5" />
+              </button>
             ) : null}
-            <p className="mt-3 text-xs text-slate-600">
-              {result.disclaimer ??
-                "This is an educational estimate, not a confirmed diagnosis. Seek professional care for concerning symptoms."}
-            </p>
-          </div>
+          </>
+        ) : null}
+
+        {step >= 3 ? (
+          <>
+            <div className="max-w-2xl rounded-2xl rounded-tl-sm bg-sky-50 px-3.5 py-3 text-sm text-slate-700">
+              Almost done. You can add a note, then decide whether to save your summary or submit it
+              for educational guidance.
+            </div>
+            <label className="block text-xs font-medium text-muted-foreground">
+              Anything else you want to add?
+              <textarea
+                value={notes}
+                onChange={(event) => setNotes(event.target.value)}
+                rows={2}
+                className="mt-1.5 w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none transition-shadow focus:ring-2 focus:ring-sky-500/30"
+                placeholder="Optional notes — only your structured summary is saved."
+              />
+            </label>
+
+            <label className="flex items-start gap-2 rounded-lg border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
+              <input
+                type="checkbox"
+                checked={shareSummary}
+                onChange={(event) => setShareSummary(event.target.checked)}
+                className="mt-0.5 accent-sky-700"
+              />
+              <span>
+                <span className="font-medium text-foreground">
+                  Make this summary available for a future appointment.
+                </span>{" "}
+                Only the structured summary is eligible for sharing; this temporary chat
+                conversation is never stored as a transcript.
+              </span>
+            </label>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={saveIntake}
+                disabled={busy || !selected.length}
+                className="inline-flex h-10 items-center gap-2 rounded-lg border border-border px-3.5 text-sm font-medium hover:bg-accent disabled:opacity-50"
+              >
+                {conversation ? <CheckCircle2 className="h-4 w-4 text-emerald-600" /> : null} Save
+                summary
+              </button>
+              <button
+                type="button"
+                onClick={getGuidance}
+                disabled={busy || !selected.length}
+                className="inline-flex h-10 items-center gap-2 rounded-lg bg-sky-700 px-4 text-sm font-medium text-white hover:bg-sky-800 disabled:opacity-50"
+              >
+                {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}{" "}
+                Get guidance
+              </button>
+              {conversation ? (
+                <span className="text-xs text-emerald-700">
+                  Structured summary saved — no chat transcript is stored.
+                </span>
+              ) : null}
+            </div>
+
+            {result ? (
+              <div className="rounded-xl border border-sky-100 bg-sky-50/60 p-3.5">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-sm font-semibold text-slate-900">
+                    Educational guidance: {label(result.predicted_disease)}
+                  </span>
+                  <span className="text-xs text-slate-600">
+                    {Math.round(result.confidence * 100)}% model confidence
+                  </span>
+                </div>
+                {result.precautions?.length ? (
+                  <ul className="mt-2 list-inside list-disc space-y-1 text-sm text-slate-700">
+                    {result.precautions.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                ) : null}
+                <p className="mt-3 text-xs text-slate-600">
+                  {result.disclaimer ??
+                    "This is an educational estimate, not a confirmed diagnosis. Seek professional care for concerning symptoms."}
+                </p>
+              </div>
+            ) : null}
+          </>
         ) : null}
       </div>
     </Panel>

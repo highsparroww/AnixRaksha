@@ -2,6 +2,7 @@ import { api } from "./api";
 import type {
   Clinic,
   DiseaseActivity,
+  Forecast,
   MapCell,
   NearbySurveillance,
   Outbreak,
@@ -31,6 +32,9 @@ export const getPatientDashboard = () => api<PatientDashboard>("/api/v1/patient/
 
 export const getSurveillanceMap = (p: Geo) =>
   api<{ cells: MapCell[] }>("/api/v1/surveillance/map", { query: geoQuery(p), silent: true });
+
+export const getForecastMap = () =>
+  api<{ forecasts: Forecast[] }>("/api/v1/surveillance/forecast-map", { silent: true });
 
 export const getNearbySurveillance = (p: Geo) =>
   api<NearbySurveillance>("/api/v1/surveillance/nearby", { query: geoQuery(p), silent: true });

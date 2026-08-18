@@ -3,7 +3,7 @@ import { ClientOnly } from "@tanstack/react-router";
 import { Crosshair, Layers, Radar, RotateCw, SlidersHorizontal, X } from "lucide-react";
 import { ACTIVITY_COLORS } from "@/components/ActivityBadge";
 import { DISEASES, label } from "@/lib/types";
-import type { Clinic, MapCell, Outbreak } from "@/lib/types";
+import type { Clinic, Forecast, MapCell, Outbreak } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import type { Selection } from "./SurveillanceMapCanvas";
 
@@ -172,6 +172,7 @@ function Field({ label: l, value, color }: { label: string; value: string; color
 
 export function SurveillanceMap({
   cells,
+  forecasts = [],
   center,
   disease,
   onDiseaseChange,
@@ -187,6 +188,7 @@ export function SurveillanceMap({
   onRetry,
 }: {
   cells: MapCell[];
+  forecasts?: Forecast[] | undefined;
   center: { latitude: number; longitude: number };
   disease: string;
   onDiseaseChange: (value: string) => void;
@@ -203,7 +205,12 @@ export function SurveillanceMap({
 }) {
   const [selection, setSelection] = useState<Selection>(null);
   const [hover, setHover] = useState<Selection>(null);
-  const [layers, setLayers] = useState({ risk: true, outbreaks: true, clinics: true });
+  const [layers, setLayers] = useState({
+    observed: true,
+    forecast: true,
+    outbreaks: true,
+    clinics: true,
+  });
   const [controlsOpen, setControlsOpen] = useState(false);
   const [recenterNonce, setRecenterNonce] = useState(0);
 
@@ -218,7 +225,7 @@ export function SurveillanceMap({
           Disease surveillance
         </h2>
         <span className="text-[11px] text-slate-500">
-          {cells.length} zones · {totalCases} cases · {radiusKm} km
+          {cells.length} observed zones · {forecasts.length} forecast zones · {radiusKm} km
         </span>
       </header>
 
@@ -226,7 +233,8 @@ export function SurveillanceMap({
         <ClientOnly fallback={<LoadingOverlay />}>
           <Suspense fallback={<LoadingOverlay />}>
             <Canvas
-              cells={layers.risk ? cells : []}
+              cells={cells}
+              forecasts={forecasts}
               center={center}
               radiusKm={radiusKm}
               outbreaks={outbreaks}
@@ -305,7 +313,8 @@ export function SurveillanceMap({
             <div className="space-y-1">
               {(
                 [
-                  ["risk", "Disease risk"],
+                  ["observed", "Observed cases"],
+                  ["forecast", "Forecast risk"],
                   ["outbreaks", "Outbreak zones"],
                   ["clinics", "Clinics"],
                 ] as const
@@ -376,6 +385,9 @@ export function SurveillanceMap({
           <div className="mt-1 flex justify-between text-[9px] uppercase tracking-wide text-slate-500">
             <span>Low</span>
             <span>Critical</span>
+          </div>
+          <div className="mt-2 border-t border-slate-700/60 pt-1.5 text-[9px] uppercase tracking-wide text-violet-300">
+            Violet = forecast risk
           </div>
         </div>
       </div>

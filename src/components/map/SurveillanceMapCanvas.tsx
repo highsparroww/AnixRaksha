@@ -11,7 +11,7 @@ import {
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import HoloHeatLayer from "./HoloHeatLayer";
-import type { Clinic, MapCell, Outbreak } from "@/lib/types";
+import type { Clinic, Forecast, MapCell, Outbreak } from "@/lib/types";
 
 export type Selection =
   | { kind: "cell"; cell: MapCell }
@@ -74,10 +74,12 @@ function SmoothWheel() {
 /** Picks the aggregated cell nearest to the pointer (never an individual case). */
 function CellPicker({
   cells,
+  forecasts = [],
   onSelect,
   onHover,
 }: {
   cells: MapCell[];
+  forecasts?: Forecast[] | undefined;
   onSelect: (cell: MapCell | null) => void;
   onHover: (cell: MapCell | null) => void;
 }) {
@@ -175,7 +177,7 @@ export default function SurveillanceMapCanvas({
   zoom?: number | undefined;
   outbreaks?: Outbreak[] | undefined;
   clinics?: Clinic[] | undefined;
-  layers: { risk: boolean; outbreaks: boolean; clinics: boolean };
+  layers: { observed: boolean; forecast: boolean; outbreaks: boolean; clinics: boolean };
   recenterNonce?: number | undefined;
   onSelect: (s: Selection) => void;
   onHover: (s: Selection) => void;
@@ -206,8 +208,21 @@ export default function SurveillanceMapCanvas({
       <Recenter lat={center.latitude} lng={center.longitude} nonce={recenterNonce} />
       <FitRadius lat={center.latitude} lng={center.longitude} radiusKm={radiusKm} />
 
-      {layers.risk ? <HoloHeatLayer cells={cells} /> : null}
-      {layers.risk ? (
+      {layers.observed ? <HoloHeatLayer cells={cells} /> : null}
+      {layers.forecast ? (
+        <HoloHeatLayer
+          palette="forecast"
+          cells={forecasts.map((forecast) => ({
+            cell_id: forecast.id,
+            latitude: forecast.latitude,
+            longitude: forecast.longitude,
+            case_count: Math.max(1, Math.round(forecast.confidence * 100)),
+            diseases: { [forecast.disease]: 1 },
+            activity_level: forecast.risk_level,
+          }))}
+        />
+      ) : null}
+      {layers.observed ? (
         <CellPicker
           cells={cells}
           onSelect={(c) => onSelect(c ? { kind: "cell", cell: c } : null)}
