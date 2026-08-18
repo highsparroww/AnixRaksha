@@ -68,7 +68,6 @@ function PatientPage() {
   const [outbreaks, setOutbreaks] = useState<Outbreak[]>([]);
   const [clinics, setClinics] = useState<Clinic[]>([]);
   const [nearby, setNearby] = useState<NearbySurveillance | null>(null);
-  const [disease, setDisease] = useState("");
   const [days, setDays] = useState(7);
   const [radiusKm, setRadiusKm] = useState(10);
   const [mapLoading, setMapLoading] = useState(false);
@@ -96,7 +95,6 @@ function PatientPage() {
       latitude: center.latitude,
       longitude: center.longitude,
       radiusKm,
-      disease: disease || undefined,
       timeWindowDays: days,
     };
     try {
@@ -120,7 +118,7 @@ function PatientPage() {
     void getForecastMap()
       .then((data) => setForecasts(data.forecasts ?? []))
       .catch(() => setForecasts([]));
-  }, [center.latitude, center.longitude, disease, days, radiusKm]);
+  }, [center.latitude, center.longitude, days, radiusKm]);
 
   useEffect(() => {
     if (allowed) void loadDashboard();
@@ -215,8 +213,6 @@ function PatientPage() {
           cells={cells}
           forecasts={forecasts}
           center={center}
-          disease={disease}
-          onDiseaseChange={setDisease}
           days={days}
           onDaysChange={setDays}
           radiusKm={radiusKm}

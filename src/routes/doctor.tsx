@@ -44,7 +44,6 @@ function DoctorPage() {
   const allowed = useRequireRole("DOCTOR");
   const [dashboard, setDashboard] = useState<DoctorDashboard | null>(null);
   const [cells, setCells] = useState<MapCell[]>([]);
-  const [disease, setDisease] = useState("");
   const [days, setDays] = useState(7);
   const [mapLoading, setMapLoading] = useState(false);
   const [caseOpen, setCaseOpen] = useState(false);
@@ -73,7 +72,6 @@ function DoctorPage() {
           latitude: center.latitude,
           longitude: center.longitude,
           radius_km: 10,
-          disease: disease || undefined,
           time_window_days: days,
         },
         silent: true,
@@ -84,7 +82,7 @@ function DoctorPage() {
     } finally {
       setMapLoading(false);
     }
-  }, [center.latitude, center.longitude, disease, days]);
+  }, [center.latitude, center.longitude, days]);
 
   useEffect(() => {
     if (allowed) void loadDashboard();
@@ -202,8 +200,6 @@ function DoctorPage() {
         <SurveillanceMap
           cells={cells}
           center={center}
-          disease={disease}
-          onDiseaseChange={setDisease}
           days={days}
           onDaysChange={setDays}
           onCenter={loadMap}

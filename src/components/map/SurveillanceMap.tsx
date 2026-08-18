@@ -2,7 +2,7 @@ import { Suspense, lazy, useState } from "react";
 import { ClientOnly } from "@tanstack/react-router";
 import { Crosshair, Layers, Radar, RotateCw, SlidersHorizontal, X } from "lucide-react";
 import { ACTIVITY_COLORS } from "@/components/ActivityBadge";
-import { DISEASES, label } from "@/lib/types";
+import { label } from "@/lib/types";
 import type { Clinic, Forecast, MapCell, Outbreak } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import type { Selection } from "./SurveillanceMapCanvas";
@@ -174,8 +174,6 @@ export function SurveillanceMap({
   cells,
   forecasts = [],
   center,
-  disease,
-  onDiseaseChange,
   days,
   onDaysChange,
   onCenter,
@@ -190,8 +188,6 @@ export function SurveillanceMap({
   cells: MapCell[];
   forecasts?: Forecast[] | undefined;
   center: { latitude: number; longitude: number };
-  disease: string;
-  onDiseaseChange: (value: string) => void;
   days: number;
   onDaysChange: (value: number) => void;
   onCenter: () => void;
@@ -205,12 +201,8 @@ export function SurveillanceMap({
 }) {
   const [selection, setSelection] = useState<Selection>(null);
   const [hover, setHover] = useState<Selection>(null);
-  const [layers, setLayers] = useState({
-    observed: true,
-    forecast: true,
-    outbreaks: true,
-    clinics: true,
-  });
+  const [mapMode, setMapMode] = useState<"observed" | "forecast">("observed");
+  const [layers, setLayers] = useState({ outbreaks: true, clinics: true });
   const [controlsOpen, setControlsOpen] = useState(false);
   const [recenterNonce, setRecenterNonce] = useState(0);
 
@@ -225,7 +217,10 @@ export function SurveillanceMap({
           Disease surveillance
         </h2>
         <span className="text-[11px] text-slate-500">
-          {cells.length} observed zones · {forecasts.length} forecast zones · {radiusKm} km
+          {mapMode === "observed"
+            ? `${cells.length} live-report zones`
+            : `${forecasts.length} forecast zones`}{" "}
+          · {radiusKm} km
         </span>
       </header>
 
@@ -239,7 +234,11 @@ export function SurveillanceMap({
               radiusKm={radiusKm}
               outbreaks={outbreaks}
               clinics={clinics}
-              layers={layers}
+              layers={{
+                observed: mapMode === "observed",
+                forecast: mapMode === "forecast",
+                ...layers,
+              }}
               recenterNonce={recenterNonce}
               onSelect={setSelection}
               onHover={setHover}
@@ -268,6 +267,37 @@ export function SurveillanceMap({
         >
           <div>
             <div className="mb-1 text-[10px] uppercase tracking-[0.18em] text-slate-500">
+              Map view
+            </div>
+            <div className="grid grid-cols-2 gap-1 rounded-md bg-slate-800/75 p-1">
+              <button
+                type="button"
+                onClick={() => setMapMode("observed")}
+                className={cn(
+                  "rounded px-2 py-1.5 text-[10px] font-medium",
+                  mapMode === "observed"
+                    ? "bg-sky-500/20 text-sky-200 ring-1 ring-sky-400/40"
+                    : "text-slate-400 hover:text-slate-200",
+                )}
+              >
+                Live reports
+              </button>
+              <button
+                type="button"
+                onClick={() => setMapMode("forecast")}
+                className={cn(
+                  "rounded px-2 py-1.5 text-[10px] font-medium",
+                  mapMode === "forecast"
+                    ? "bg-violet-500/20 text-violet-200 ring-1 ring-violet-400/40"
+                    : "text-slate-400 hover:text-slate-200",
+                )}
+              >
+                5-day forecast
+              </button>
+            </div>
+          </div>
+          <div>
+            <div className="mb-1 text-[10px] uppercase tracking-[0.18em] text-slate-500">
               Radius
             </div>
             <div className="flex gap-1">
@@ -289,32 +319,12 @@ export function SurveillanceMap({
             </div>
           </div>
           <div>
-            <div className="mb-1 text-[10px] uppercase tracking-[0.18em] text-slate-500">
-              Disease
-            </div>
-            <select
-              value={disease}
-              onChange={(e) => onDiseaseChange(e.target.value)}
-              aria-label="Filter by disease"
-              className="h-8 w-full rounded-md border border-slate-600/60 bg-slate-800/80 px-2 text-[11px] text-slate-200 outline-none focus:ring-1 focus:ring-sky-400/50"
-            >
-              <option value="">All diseases</option>
-              {DISEASES.map((d) => (
-                <option key={d} value={d}>
-                  {label(d)}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
             <div className="mb-1 flex items-center gap-1 text-[10px] uppercase tracking-[0.18em] text-slate-500">
               <Layers className="h-3 w-3" /> Layers
             </div>
             <div className="space-y-1">
               {(
                 [
-                  ["observed", "Observed cases"],
-                  ["forecast", "Forecast risk"],
                   ["outbreaks", "Outbreak zones"],
                   ["clinics", "Clinics"],
                 ] as const
@@ -386,8 +396,10 @@ export function SurveillanceMap({
             <span>Low</span>
             <span>Critical</span>
           </div>
-          <div className="mt-2 border-t border-slate-700/60 pt-1.5 text-[9px] uppercase tracking-wide text-violet-300">
-            Violet = forecast risk
+          <div className="mt-2 border-t border-slate-700/60 pt-1.5 text-[9px] uppercase tracking-wide text-slate-400">
+            {mapMode === "observed"
+              ? "Live, confirmed reports only"
+              : "Violet risk surface · modelled forecast"}
           </div>
         </div>
       </div>
